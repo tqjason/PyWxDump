@@ -40,6 +40,8 @@ def get_contact(MicroMsg_db_path, wx_id):
            "ORDER BY NickName ASC;")
     cursor.execute(sql)
     result = cursor.fetchone()
+    cursor.close()
+    db.close()
     print('联系人信息：', result)
     if not result:
         print('居然没找到！')
@@ -276,6 +278,8 @@ def get_msg_list(MSG_db_path, selected_talker="", start_index=0, page_size=500):
                 if bytes_extra:
                     try:
                         talker = bytes_extra['3'][0]['2'].decode('utf-8', errors='ignore')
+                        if "publisher-id" in talker:
+                            talker = "系统"
                     except:
                         pass
             else:
@@ -304,6 +308,7 @@ def get_chat_count(MSG_db_path: [str, list], username: str = ""):
     for row in result:
         username, chat_count = row
         chat_counts[username] = chat_count
+    db1.close()
     return chat_counts
 
 
@@ -316,8 +321,12 @@ def get_all_chat_count(MSG_db_path: [str, list]):
     sql = f"SELECT COUNT(*) FROM MSG;"
     db1 = sqlite3.connect(MSG_db_path)
     result = execute_sql(db1, sql)
-    chat_counts = result[0][0]
-    return chat_counts
+    if result and len(result) > 0:
+        chat_counts = result[0][0]
+        db1.close()
+        return chat_counts
+    db1.close()
+    return 0
 
 
 def export_csv(username, outpath, MSG_ALL_db_path, page_size=5000):
