@@ -182,17 +182,18 @@ def get_msg_list(MSG_db_path, selected_talker="", start_index=0, page_size=500):
 
             elif type_id == (3, 0):  # 图片
                 DictExtra = read_BytesExtra(BytesExtra)
-                DictExtra = str(DictExtra)
-                match = re.search(r"FileStorage(.*?)'", DictExtra)
-                if match:
-                    img_path = match.group(0).replace("'", "")
+                DictExtra_str = str(DictExtra)
+                img_paths = [i for i in re.findall(r"(FileStorage.*?)'", DictExtra_str)]
+                img_paths = sorted(img_paths, key=lambda p: "Image" in p, reverse=True)
+                if img_paths:
+                    img_path = img_paths[0].replace("'", "")
                     img_path = [i for i in img_path.split("\\") if i]
                     img_path = os.path.join(*img_path)
                     content["src"] = img_path
                 else:
                     content["src"] = ""
                 content["msg"] = "图片"
-            elif type_id == (34, 0):
+            elif type_id == (34, 0):  # 语音
                 tmp_c = parse_xml_string(StrContent)
                 voicelength = tmp_c.get("voicemsg", {}).get("voicelength", "")
                 transtext = tmp_c.get("voicetrans", {}).get("transtext", "")
@@ -206,9 +207,14 @@ def get_msg_list(MSG_db_path, selected_talker="", start_index=0, page_size=500):
             elif type_id == (43, 0):  # 视频
                 DictExtra = read_BytesExtra(BytesExtra)
                 DictExtra = str(DictExtra)
-                match = re.search(r"FileStorage(.*?)'", DictExtra)
-                if match:
-                    video_path = match.group(0).replace("'", "")
+
+                DictExtra_str = str(DictExtra)
+                video_paths = [i for i in re.findall(r"(FileStorage.*?)'", DictExtra_str)]
+                video_paths = sorted(video_paths, key=lambda p: "mp4" in p, reverse=True)
+                if video_paths:
+                    video_path = video_paths[0].replace("'", "")
+                    video_path = [i for i in video_path.split("\\") if i]
+                    video_path = os.path.join(*video_path)
                     content["src"] = video_path
                 else:
                     content["src"] = ""
