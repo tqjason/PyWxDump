@@ -25,6 +25,7 @@ def start_falsk(merge_path="", msg_path="", micro_path="", media_path="", wx_pat
     :param port:  端口号
     :param online:  是否在线查看(局域网查看)
     :param debug:  是否开启debug模式
+    :param isopenBrowser:  是否自动打开浏览器
     :return:
     """
     tmp_path = os.path.join(os.getcwd(), "wxdump_tmp")  # 临时文件夹,用于存放图片等
@@ -126,4 +127,4 @@ if __name__ == '__main__':
     my_wxid = "****"
 
     start_falsk(msg_path=msg_path, micro_path=micro_path, media_path=media_path, wx_path=wx_path, my_wxid=my_wxid,
-                port=5000, online=False, debug=False)
+                port=5000, online=False, debug=False, isopenBrowser=False)
