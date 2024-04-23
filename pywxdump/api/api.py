@@ -22,7 +22,7 @@ from pywxdump.api.utils import read_session, get_session_wxids, save_session, er
 from pywxdump import read_info, VERSION_LIST, batch_decrypt, BiasAddr, merge_db, decrypt_merge, merge_real_time_db
 
 from pywxdump.dbpreprocess import wxid2userinfo, ParsingMSG, get_user_list, get_recent_user_list, ParsingMediaMSG, \
-    download_file,export_csv, export_json
+    download_file, export_csv, export_json
 from pywxdump.dbpreprocess.utils import dat2img
 
 # app = Flask(__name__, static_folder='../ui/web/dist', static_url_path='/')
@@ -76,8 +76,12 @@ def init_key():
         return ReJson(1002, body=f"my_wxid is required: {my_wxid}")
 
     out_path = os.path.join(g.tmp_path, "decrypted", my_wxid) if my_wxid else os.path.join(g.tmp_path, "decrypted")
+    # 检查文件夹中文件是否被占用
     if os.path.exists(out_path):
-        shutil.rmtree(out_path)
+        try:
+            shutil.rmtree(out_path)
+        except PermissionError as e:
+            return ReJson(2001, body=str(e))
 
     code, merge_save_path = decrypt_merge(wx_path=wx_path, key=key, outpath=out_path)
     time.sleep(1)
@@ -743,6 +747,27 @@ def get_export_json():
 
 
 # end 导出聊天记录 *******************************************************************************************************
+
+# start 聊天记录分析api **************************************************************************************************
+
+@api.route('/api/date_count', methods=["GET", 'POST'])
+@error9999
+def get_date_count():
+    """
+    获取日期统计
+    """
+    my_wxid = read_session(g.sf, "test", "last")
+    if not my_wxid: return ReJson(1001, body="my_wxid is required")
+    merge_path = read_session(g.sf, my_wxid, "merge_path")
+    date_count = ParsingMSG(merge_path).date_count()
+    return ReJson(0, date_count)
+
+
+@api.route('/api/wordcloud', methods=["GET", 'POST'])
+@error9999
+def wordcloud():
+    pass
+
 
 # start 这部分为专业工具的api *********************************************************************************************
 
