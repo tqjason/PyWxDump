@@ -5,6 +5,7 @@
 # Author:       xaoyaoo
 # Date:         2023/12/03
 # -------------------------------------------------------------------------------
+import logging
 import os
 import random
 import shutil
@@ -242,6 +243,8 @@ def merge_db(db_paths, save_path="merge.db", CreateTime: int = 0, endCreateTime:
             # 获取表中的字段名
             sql = f"PRAGMA table_info({table})"
             columns = execute_sql(db, sql)
+            if not columns or len(columns) < 1:
+                continue
             col_type = {
                 (i[1] if isinstance(i[1], str) else i[1].decode(), i[2] if isinstance(i[2], str) else i[2].decode()) for
                 i in columns}
@@ -282,7 +285,10 @@ def merge_db(db_paths, save_path="merge.db", CreateTime: int = 0, endCreateTime:
                 continue
             # 插入数据
             sql = f"INSERT OR IGNORE INTO {table} ({','.join([i[0] for i in col_type])}) VALUES ({','.join(['?'] * len(columns))})"
-            out_cursor.executemany(sql, src_data)
+            try:
+                out_cursor.executemany(sql, src_data)
+            except Exception as e:
+                logging.error(f"error: {alias}\n{table}\n{sql}\n{src_data}\n{len(src_data)}\n{e}\n**********")
             outdb.commit()
         db.close()
     outdb.close()
