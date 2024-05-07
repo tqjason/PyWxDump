@@ -255,7 +255,7 @@ class MainShowChatRecords(BaseSubMainClass):
 
     def init_parses(self, parser):
         # 添加 'decrypt' 子命令解析器
-        parser.add_argument("-merge", "--merge_path", type=str, help="解密后的 merge_all.db 的路径", required=False,
+        parser.add_argument("-merge", "--merge_path", type=str, help="解密并合并后的 merge_all.db 的路径", required=False,
                             metavar="")
 
         parser.add_argument("-wid", "--wx_path", type=str,
@@ -286,6 +286,32 @@ class MainShowChatRecords(BaseSubMainClass):
 
         start_falsk(merge_path=merge_path, wx_path=args.wx_path, key="", my_wxid=args.my_wxid, online=online)
 
+
+class MainExportChatRecords(BaseSubMainClass):
+    mode = "export"
+    parser_kwargs = {"help": "[已废弃]聊天记录导出为html"}
+
+    def init_parses(self, parser):
+        # 添加 'decrypt' 子命令解析器
+        return parser
+
+    def run(self, args):
+        print(f"[*] PyWxDump v{pywxdump.__version__}")
+        print("[+] export命令已废弃，请使用ui命令[wxdump ui]或api命令[wxdump api]启动服务")
+
+
+
+class MainAll(BaseSubMainClass):
+    mode = "all"
+    parser_kwargs = {"help": "[已废弃]获取微信信息，解密微信数据库，查看聊天记录"}
+
+    def init_parses(self, parser):
+        # 添加 'all' 子命令解析器
+        return parser
+
+    def run(self, args):
+        print(f"[*] PyWxDump v{pywxdump.__version__}")
+        print("[+] all命令已废弃，请使用ui命令[wxdump ui]或api命令[wxdump api]启动服务")
 
 
 class MainUi(BaseSubMainClass):
