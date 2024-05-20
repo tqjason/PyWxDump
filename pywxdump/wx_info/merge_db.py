@@ -247,7 +247,8 @@ def merge_db(db_paths, save_path="merge.db", CreateTime: int = 0, endCreateTime:
                 if not columns or len(columns) < 1:
                     continue
                 col_type = {
-                    (i[1] if isinstance(i[1], str) else i[1].decode(), i[2] if isinstance(i[2], str) else i[2].decode()) for
+                    (i[1] if isinstance(i[1], str) else i[1].decode(), i[2] if isinstance(i[2], str) else i[2].decode())
+                    for
                     i in columns}
                 columns = [i[1] if isinstance(i[1], str) else i[1].decode() for i in columns]
                 if not columns or len(columns) < 1:
@@ -320,8 +321,10 @@ def decrypt_merge(wx_path, key, outpath="", CreateTime: int = 0, endCreateTime: 
     my_wxid = os.path.basename(wx_path)
 
     # 解密
-    code, wxdbpaths = get_core_db(wx_path, ["MSG", "MediaMSG", "MicroMsg", "OpenIMContact", "OpenIMMedia", "OpenIMMsg"])
-
+    code, wxdbpaths = get_core_db(wx_path, ["MSG", "MediaMSG", "MicroMsg", "OpenIMContact", "OpenIMMedia",
+                                            "OpenIMMsg", "Favorite"])
+    if not code:
+        return False, wxdbpaths
     # 判断out_path是否为空目录
     if os.path.exists(decrypted_path) and os.listdir(decrypted_path):
         for root, dirs, files in os.walk(decrypted_path, topdown=False):
@@ -412,6 +415,10 @@ def all_merge_real_time_db(key, wx_path, merge_path):
     """
     合并所有实时数据库
     注：这是全量合并，会有可能产生重复数据，需要自行去重
+    :param key:  解密密钥
+    :param wx_path:  微信路径
+    :param merge_path:  合并后的数据库路径 eg: C:\*******\WeChat Files\wxid_*********\merge.db
+    :return:
     """
     if not merge_path or not key or not wx_path or not wx_path:
         return False, "msg_path or media_path or wx_path or key is required"
@@ -422,7 +429,6 @@ def all_merge_real_time_db(key, wx_path, merge_path):
 
     db_paths = get_core_db(wx_path, ["MediaMSG", "MSG", "MicroMsg"])
     if not db_paths[0]:
-        print(wx_path)
         return False, db_paths[1]
     db_paths = db_paths[1]
     for i in db_paths:
