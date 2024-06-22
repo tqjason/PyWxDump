@@ -1,6 +1,24 @@
-## v3.0.30.(待发布)
+## v3.0.33.(待发布)
 
 - UPDATE CHANGELOG.md
+
+## v3.0.32
+
+- 使用本地设置，增加选项
+
+## v3.0.31
+
+- fix bug
+- UPDATE CHANGELOG.md
+
+## v3.0.30
+
+- 位置显示支持
+- 消息类型统一处理
+- 转账消息更加明确
+- 增加更多消息类型的说明
+- UPDATE CHANGELOG.md
+- get_BytesExtra 数据类型增加其他处理
 
 ## v3.0.29
 

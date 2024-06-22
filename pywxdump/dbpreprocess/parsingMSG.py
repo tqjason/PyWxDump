@@ -5,19 +5,244 @@
 # Author:       xaoyaoo
 # Date:         2024/04/15
 # -------------------------------------------------------------------------------
+import json
 import os
 import re
 
 import pandas as pd
 
 from .dbbase import DatabaseBase
-from .utils import get_md5, name2typeid, typeid2name, timestamp2str, xml2dict, match_BytesExtra
+from .utils import get_md5, name2typeid, typeid2name, type_converter, timestamp2str, xml2dict, match_BytesExtra
 import lz4.block
 import blackboxprotobuf
 
 
 class ParsingMSG(DatabaseBase):
     _class_name = "MSG"
+    BytesExtra_message_type = {
+        "1": {
+            "type": "message",
+            "message_typedef": {
+                "1": {
+                    "type": "int",
+                    "name": ""
+                },
+                "2": {
+                    "type": "int",
+                    "name": ""
+                }
+            },
+            "name": "1"
+        },
+        "3": {
+            "type": "message",
+            "message_typedef": {
+                "1": {
+                    "type": "int",
+                    "name": ""
+                },
+                "2": {
+                    "type": "str",
+                    "name": ""
+                }
+            },
+            "name": "3",
+            "alt_typedefs": {
+                "1": {
+                    "1": {
+                        "type": "int",
+                        "name": ""
+                    },
+                    "2": {
+                        "type": "message",
+                        "message_typedef": {},
+                        "name": ""
+                    }
+                },
+                "2": {
+                    "1": {
+                        "type": "int",
+                        "name": ""
+                    },
+                    "2": {
+                        "type": "message",
+                        "message_typedef": {
+                            "13": {
+                                "type": "fixed32",
+                                "name": ""
+                            },
+                            "12": {
+                                "type": "fixed32",
+                                "name": ""
+                            }
+                        },
+                        "name": ""
+                    }
+                },
+                "3": {
+                    "1": {
+                        "type": "int",
+                        "name": ""
+                    },
+                    "2": {
+                        "type": "message",
+                        "message_typedef": {
+                            "15": {
+                                "type": "fixed64",
+                                "name": ""
+                            }
+                        },
+                        "name": ""
+                    }
+                },
+                "4": {
+                    "1": {
+                        "type": "int",
+                        "name": ""
+                    },
+                    "2": {
+                        "type": "message",
+                        "message_typedef": {
+                            "15": {
+                                "type": "int",
+                                "name": ""
+                            },
+                            "14": {
+                                "type": "fixed32",
+                                "name": ""
+                            }
+                        },
+                        "name": ""
+                    }
+                },
+                "5": {
+                    "1": {
+                        "type": "int",
+                        "name": ""
+                    },
+                    "2": {
+                        "type": "message",
+                        "message_typedef": {
+                            "12": {
+                                "type": "fixed32",
+                                "name": ""
+                            },
+                            "7": {
+                                "type": "fixed64",
+                                "name": ""
+                            },
+                            "6": {
+                                "type": "fixed64",
+                                "name": ""
+                            }
+                        },
+                        "name": ""
+                    }
+                },
+                "6": {
+                    "1": {
+                        "type": "int",
+                        "name": ""
+                    },
+                    "2": {
+                        "type": "message",
+                        "message_typedef": {
+                            "7": {
+                                "type": "fixed64",
+                                "name": ""
+                            },
+                            "6": {
+                                "type": "fixed32",
+                                "name": ""
+                            }
+                        },
+                        "name": ""
+                    }
+                },
+                "7": {
+                    "1": {
+                        "type": "int",
+                        "name": ""
+                    },
+                    "2": {
+                        "type": "message",
+                        "message_typedef": {
+                            "12": {
+                                "type": "fixed64",
+                                "name": ""
+                            }
+                        },
+                        "name": ""
+                    }
+                },
+                "8": {
+                    "1": {
+                        "type": "int",
+                        "name": ""
+                    },
+                    "2": {
+                        "type": "message",
+                        "message_typedef": {
+                            "6": {
+                                "type": "fixed64",
+                                "name": ""
+                            },
+                            "12": {
+                                "type": "fixed32",
+                                "name": ""
+                            }
+                        },
+                        "name": ""
+                    }
+                },
+                "9": {
+                    "1": {
+                        "type": "int",
+                        "name": ""
+                    },
+                    "2": {
+                        "type": "message",
+                        "message_typedef": {
+                            "15": {
+                                "type": "int",
+                                "name": ""
+                            },
+                            "12": {
+                                "type": "fixed64",
+                                "name": ""
+                            },
+                            "6": {
+                                "type": "int",
+                                "name": ""
+                            }
+                        },
+                        "name": ""
+                    }
+                },
+                "10": {
+                    "1": {
+                        "type": "int",
+                        "name": ""
+                    },
+                    "2": {
+                        "type": "message",
+                        "message_typedef": {
+                            "6": {
+                                "type": "fixed32",
+                                "name": ""
+                            },
+                            "12": {
+                                "type": "fixed64",
+                                "name": ""
+                            }
+                        },
+                        "name": ""
+                    }
+                },
+            }
+        }
+    }
+
     def __init__(self, db_path):
         super().__init__(db_path)
 
@@ -41,7 +266,7 @@ class ParsingMSG(DatabaseBase):
         if BytesExtra is None or not isinstance(BytesExtra, bytes):
             return None
         try:
-            deserialize_data, message_type = blackboxprotobuf.decode_message(BytesExtra)
+            deserialize_data, message_type = blackboxprotobuf.decode_message(BytesExtra, self.BytesExtra_message_type)
             return deserialize_data
         except Exception as e:
             return None
@@ -172,8 +397,15 @@ class ParsingMSG(DatabaseBase):
             cdnurl = content_tmp.get("emoji", {}).get("cdnurl", "")
             if cdnurl:
                 content = {"src": cdnurl, "msg": "表情"}
-
-        elif type_id == (49, 0):
+        elif type_id == (48, 0):  # 地图信息
+            content_tmp = xml2dict(StrContent)
+            location = content_tmp.get("location", {})
+            content["msg"] = (f"纬度:【{location.pop('x')}】 经度:【{location.pop('y')}】\n"
+                              f"位置：{location.pop('label')} {location.pop('poiname')}\n"
+                              f"其他信息：{json.dumps(location, ensure_ascii=False, indent=4)}"
+                              )
+            content["src"] = ""
+        elif type_id == (49, 0):  # 文件
             DictExtra = self.get_BytesExtra(BytesExtra)
             url = match_BytesExtra(DictExtra)
             content["src"] = url
@@ -207,8 +439,15 @@ class ParsingMSG(DatabaseBase):
         elif type_id == (49, 2000):  # 转账消息
             CompressContent = self.decompress_CompressContent(CompressContent)
             content_tmp = xml2dict(CompressContent)
-            feedesc = content_tmp.get("appmsg", {}).get("wcpayinfo", {}).get("feedesc", "")
-            content["msg"] = f"转账：{feedesc}"
+            wcpayinfo = content_tmp.get("appmsg", {}).get("wcpayinfo", {})
+            paysubtype = wcpayinfo.get("paysubtype", "")  # 转账类型
+            feedesc = wcpayinfo.get("feedesc", "")  # 转账金额
+            pay_memo = wcpayinfo.get("pay_memo", "")  # 转账备注
+            begintransfertime = wcpayinfo.get("begintransfertime", "")  # 转账开始时间
+            content["msg"] = (f"{'已收款' if paysubtype == '3' else '转账'}：{feedesc}\n"
+                              f"转账说明：{pay_memo if pay_memo else ''}\n"
+                              f"转账时间：{timestamp2str(begintransfertime)}\n"
+                              )
             content["src"] = ""
 
         elif type_id[0] == 49 and type_id[1] != 0:
@@ -235,7 +474,7 @@ class ParsingMSG(DatabaseBase):
                 bytes_extra = self.get_BytesExtra(BytesExtra)
                 if bytes_extra:
                     try:
-                        talker = bytes_extra['3'][0]['2'].decode('utf-8', errors='ignore')
+                        talker = bytes_extra['3'][0]['2']
                         if "publisher-id" in talker:
                             talker = "系统"
                     except:
@@ -255,7 +494,7 @@ class ParsingMSG(DatabaseBase):
                 "ORDER BY CreateTime ASC LIMIT ?,?")
             if msg_type:
                 sql = sql.replace("ORDER BY CreateTime ASC LIMIT ?,?",
-                            f"AND Type={msg_type} ORDER BY CreateTime ASC LIMIT ?,?")
+                                  f"AND Type={msg_type} ORDER BY CreateTime ASC LIMIT ?,?")
             result1 = self.execute_sql(sql, (wxid, start_index, page_size))
         else:
             sql = (
@@ -263,7 +502,7 @@ class ParsingMSG(DatabaseBase):
                 "FROM MSG ORDER BY CreateTime ASC LIMIT ?,?")
             if msg_type:
                 sql = sql.replace("ORDER BY CreateTime ASC LIMIT ?,?",
-                            f"AND Type={msg_type} ORDER BY CreateTime ASC LIMIT ?,?")
+                                  f"AND Type={msg_type} ORDER BY CreateTime ASC LIMIT ?,?")
             result1 = self.execute_sql(sql, (start_index, page_size))
         if not result1:
             return [], []
