@@ -1,5 +1,20 @@
-## v3.0.33.(待发布)
+## v3.0.36.(待发布)
 
+- UPDATE CHANGELOG.md
+
+## v3.0.35
+
+- fix 部分表情无法显示
+
+## v3.0.34
+
+- fix
+- (49, 2000): "转账",
+- UPDATE CHANGELOG.md
+
+## v3.0.33
+
+- fix
 - UPDATE CHANGELOG.md
 
 ## v3.0.32
