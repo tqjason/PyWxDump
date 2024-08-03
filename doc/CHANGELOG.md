@@ -1,6 +1,9 @@
 ## v3.0.43.(待发布)
 
-- 
+- fix
+- add wx3.9.11.25
+- UPDATE CHANGELOG.md
+- 3.1.0,很多更改丢失，重新恢复的文件
 
 ## v3.0.42
 
@@ -14,6 +17,7 @@
 ## v3.0.41
 
 - 格式化代码
+- 加快wxinfo获取
 - 加速merge_db合并速度
 - 加快wxinfo获取，速度提升10%
 - UPDATE CHANGELOG.md
