@@ -22,8 +22,7 @@ from pywxdump.api.utils import get_conf, get_conf_wxids, set_conf, error9999, ge
     get_conf_local_wxid
 from pywxdump import get_wx_info, WX_OFFS, batch_decrypt, BiasAddr, merge_db, decrypt_merge, merge_real_time_db
 
-from pywxdump.db import DBHandler, download_file, export_csv, export_json
-from pywxdump.db.utils import dat2img
+from pywxdump.db import DBHandler, download_file, export_csv, export_json, dat2img
 
 # app = Flask(__name__, static_folder='../ui/web/dist', static_url_path='/')
 
@@ -156,7 +155,7 @@ def get_imgsrc(imgsrc):
                 f.write(out_bytes)
             return send_file(imgsavepath)
         else:
-            return ReJson(1001, body=original_img_path)
+            return ReJson(1001, body=f"{original_img_path} not exists")
     elif imgsrc.startswith("http://") or imgsrc.startswith("https://"):
         # 将?后面的参数连接到imgsrc
         imgsrc = imgsrc + "?" + request.query_string.decode("utf-8") if request.query_string else imgsrc
@@ -234,12 +233,12 @@ def get_msgs():
         return ReJson(1002, body=f"start or limit is not int {start} {limit}")
 
     db = DBHandler(db_config)
-    msgs, wxid_list = db.get_msg_list(wxid, start, limit)
+    msgs, wxid_list = db.get_msg_list(wxid=wxid, start_index=start, page_size=limit)
     if not msgs:
-        msgs, wxid_list = db.get_plc_msg_list(wxid, start, limit)
+        msgs, wxid_list = db.get_plc_msg_list(wxid=wxid, start_index=start, page_size=limit)
     wxid_list.append(my_wxid)
-    user_list = db.get_user_list(wxids=wxid_list)
-    return ReJson(0, {"msg_list": msgs, "user_list": user_list})
+    user = db.get_user_list(wxids=wxid_list)
+    return ReJson(0, {"msg_list": msgs, "user_list": user})
 
 
 @rs_api.route('/api/rs/video/<path:videoPath>', methods=["GET", 'POST'])
@@ -268,7 +267,7 @@ def get_video(videoPath):
 def get_audio(savePath):
     my_wxid = get_conf(g.caf, g.at, "last")
     if not my_wxid: return ReJson(1001, body="my_wxid is required")
-    merge_path = get_conf(g.caf, my_wxid, "merge_path")
+    db_config = get_conf(g.caf, my_wxid, "db_config")
 
     savePath = os.path.join(g.work_path, my_wxid, "audio", savePath)  # 这个是从url中获取的
     if os.path.exists(savePath):
@@ -282,8 +281,8 @@ def get_audio(savePath):
     if not os.path.exists(os.path.dirname(savePath)):
         os.makedirs(os.path.dirname(savePath))
 
-    parsing_media_msg = MediaHandler(merge_path)
-    wave_data = parsing_media_msg.get_audio(MsgSvrID, is_play=False, is_wave=True, save_path=savePath, rate=24000)
+    db = DBHandler(db_config)
+    wave_data = db.get_audio(MsgSvrID, is_play=False, is_wave=True, save_path=savePath, rate=24000)
     if not wave_data:
         return ReJson(1001, body="wave_data is required")
 

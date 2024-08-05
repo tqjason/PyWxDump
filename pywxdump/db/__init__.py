@@ -7,7 +7,7 @@
 # -------------------------------------------------------------------------------
 import pandas as pd
 
-from .utils import download_file
+from .utils import download_file, dat2img
 
 from .dbFavorite import FavoriteHandler
 from .dbMSG import MsgHandler
@@ -34,6 +34,13 @@ class DBHandler(MicroHandler, MediaHandler, OpenIMContactHandler, PublicMsgHandl
         self.PublicMsg_exist = self.PublicMSG_tables_exist()
         self.OpenIMMedia_exist = self.OpenIMMedia_tables_exist()
         self.Favorite_exist = self.Favorite_tables_exist()
+
+        if self.MSG_exist:  # 添加索引
+            self.Msg_add_index()
+        if self.PublicMsg_exist:  # 添加索引
+            self.PublicMsg_add_index()
+        if self.Micro_exist:  # 添加索引
+            self.Micro_add_index()
 
         # print(self.MSG_exist, self.Micro_exist, self.Media_exist, self.OpenIMContact_exist, self.PublicMsg_exist,
         #       self.OpenIMMedia_exist, self.Favorite_exist)
