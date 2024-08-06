@@ -451,15 +451,42 @@ def get_export_json():
 # start 聊天记录分析api **************************************************************************************************
 
 @rs_api.route('/api/rs/date_count', methods=["GET", 'POST'])
-@error9999
 def get_date_count():
     """
     获取日期统计
+    :return:
     """
+    if request.method not in ["GET", "POST"]:
+        return ReJson(1003, msg="Unsupported method")
+    rq_data = request.json if request.method == "POST" else request.args
+    word = rq_data.get("wxid", "")
+    start_time = rq_data.get("start_time", 0)
+    end_time = rq_data.get("end_time", 0)
+
     my_wxid = get_conf(g.caf, g.at, "last")
     if not my_wxid: return ReJson(1001, body="my_wxid is required")
-    merge_path = get_conf(g.caf, my_wxid, "merge_path")
-    date_count = DBHandler(merge_path).date_count()
+    db_config = get_conf(g.caf, my_wxid, "db_config")
+    date_count = DBHandler(db_config).get_date_count(wxid=word, start_time=start_time, end_time=end_time)
+    return ReJson(0, date_count)
+
+
+@rs_api.route('/api/rs/top_talker_count', methods=["GET", 'POST'])
+def get_top_talker_count():
+    """
+    获取最多聊天的人
+    :return:
+    """
+    if request.method not in ["GET", "POST"]:
+        return ReJson(1003, msg="Unsupported method")
+    rq_data = request.json if request.method == "POST" else request.args
+    top = rq_data.get("top", 10)
+    start_time = rq_data.get("start_time", 0)
+    end_time = rq_data.get("end_time", 0)
+
+    my_wxid = get_conf(g.caf, g.at, "last")
+    if not my_wxid: return ReJson(1001, body="my_wxid is required")
+    db_config = get_conf(g.caf, my_wxid, "db_config")
+    date_count = DBHandler(db_config).get_top_talker_count(top=top, start_time=start_time, end_time=end_time)
     return ReJson(0, date_count)
 
 
@@ -468,6 +495,8 @@ def get_date_count():
 def wordcloud():
     pass
 
+
+# end 聊天记录分析api ****************************************************************************************************
 
 # 关于、帮助、设置 *******************************************************************************************************
 @rs_api.route('/api/rs/check_update', methods=["GET", 'POST'])
@@ -504,6 +533,24 @@ def version():
     :return:
     """
     return ReJson(0, pywxdump.__version__)
+
+
+@rs_api.route('/api/rs/get_readme', methods=["GET", 'POST'])
+@error9999
+def get_readme():
+    """
+    版本
+    :return:
+    """
+    url = "https://raw.githubusercontent.com/xaoyaoo/PyWxDump/master/doc/README_CN.md"
+    import requests
+    res = requests.get(url)
+    if res.status_code == 200:
+        data = res.text
+        data = data.replace("# <center>PyWxDump</center>", "")
+        return ReJson(0, body=data)
+    else:
+        return ReJson(2001, body="status_code is not 200")
 
 
 # END 关于、帮助、设置 ***************************************************************************************************

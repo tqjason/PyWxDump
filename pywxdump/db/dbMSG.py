@@ -161,7 +161,7 @@ class MsgHandler(DatabaseBase):
             title = appmsg.get("title", "")
             des = appmsg.get("des", "")
             url = appmsg.get("url", "")
-            msg = f"{title}\n{des}\n\n{url}"
+            msg = f'{title}\n{des}\n\n<a href="{url}">点击查看详情</a>'
             src = url
 
         elif type_id == (49, 19):  # 合并转发的聊天记录
@@ -178,18 +178,27 @@ class MsgHandler(DatabaseBase):
             CompressContent = decompress_CompressContent(CompressContent)
             content_tmp = xml2dict(CompressContent)
             appmsg = content_tmp.get("appmsg", {})
+
             title = appmsg.get("title", "")
             refermsg = appmsg.get("refermsg", {})
+
+            type_id = appmsg.get("type", "1")
+
             displayname = refermsg.get("displayname", "")
             display_content = refermsg.get("content", "")
             display_createtime = refermsg.get("createtime", "")
+
             display_createtime = timestamp2str(
                 int(display_createtime)) if display_createtime.isdigit() else display_createtime
-            if display_content.startswith("<?xml"):
+
+            if display_content and display_content.startswith("<?xml"):
                 display_content = xml2dict(display_content)
-                appmsg1 = display_content.get("appmsg", {})
-                title1 = appmsg1.get("title", "")
-                if title1: display_content = title1
+                if "img" in display_content:
+                    display_content = "图片"
+                else:
+                    appmsg1 = display_content.get("appmsg", {})
+                    title1 = appmsg1.get("title", "")
+                    display_content = title1 if title1 else display_content
             msg = f"{title}\n\n[引用]({display_createtime}){displayname}:{display_content}"
             src = ""
 
@@ -280,6 +289,86 @@ class MsgHandler(DatabaseBase):
         wxid_list = {d['talker'] for d in rdata}  # 创建一个无重复的 wxid 列表
 
         return rdata, list(wxid_list)
+
+    @db_error
+    def get_date_count(self, wxid='', start_time: int = 0, end_time: int = 0):
+        """
+        获取每日聊天记录数量，包括发送者数量、接收者数量和总数。
+        """
+        if isinstance(start_time, str) and start_time.isdigit():
+            start_time = int(start_time)
+        if isinstance(end_time, str) and end_time.isdigit():
+            end_time = int(end_time)
+
+        # If either start_time or end_time is not an integer, set both to 0
+        if not (isinstance(start_time, int) and isinstance(end_time, int)):
+            start_time = 0
+            end_time = 0
+
+        params = ()
+
+        sql_wxid = "AND StrTalker = ? " if wxid else ""
+        params = params + (wxid,) if wxid else params
+
+        sql_time = "AND CreateTime BETWEEN ? AND ? " if start_time and end_time else ""
+        params = params + (start_time, end_time) if start_time and end_time else params
+
+        sql = ("SELECT strftime('%Y-%m-%d', CreateTime, 'unixepoch', 'localtime') AS date, COUNT(*) AS total_count ,"
+               "       SUM(CASE WHEN IsSender = 1 THEN 1 ELSE 0 END) AS sender_count, "
+               "       SUM(CASE WHEN IsSender = 0 THEN 1 ELSE 0 END) AS receiver_count "
+               "FROM MSG "
+               "WHERE StrTalker NOT LIKE '%chatroom%' "
+               f"{sql_wxid} {sql_time} "
+               f"GROUP BY date ORDER BY date ASC;")
+
+        result = self.execute(sql, params)
+
+        if not result:
+            return {}
+        # 将查询结果转换为字典
+        result_dict = {}
+        for row in result:
+            date, total_count, sender_count, receiver_count = row
+            result_dict[date] = {
+                "sender_count": sender_count,
+                "receiver_count": receiver_count,
+                "total_count": total_count
+            }
+        return result_dict
+
+    @db_error
+    def get_top_talker_count(self, top: int = 10, start_time: int = 0, end_time: int = 0):
+        """
+        获取聊天记录数量最多的联系人,他们聊天记录数量
+        """
+        if isinstance(start_time, str) and start_time.isdigit():
+            start_time = int(start_time)
+        if isinstance(end_time, str) and end_time.isdigit():
+            end_time = int(end_time)
+
+        # If either start_time or end_time is not an integer, set both to 0
+        if not (isinstance(start_time, int) and isinstance(end_time, int)):
+            start_time = 0
+            end_time = 0
+
+        sql_time = f"AND CreateTime BETWEEN {start_time} AND {end_time} " if start_time and end_time else ""
+        sql = (
+            "SELECT StrTalker, COUNT(*) AS count,"
+            "SUM(CASE WHEN IsSender = 1 THEN 1 ELSE 0 END) AS sender_count, "
+            "SUM(CASE WHEN IsSender = 0 THEN 1 ELSE 0 END) AS receiver_count "
+            "FROM MSG "
+            "WHERE StrTalker NOT LIKE '%chatroom%' "
+            f"{sql_time} "
+            "GROUP BY StrTalker ORDER BY count DESC "
+            f"LIMIT {top};"
+        )
+        result = self.execute(sql)
+        if not result:
+            return {}
+        # 将查询结果转换为字典
+        result_dict = {row[0]: {"total_count": row[1], "sender_count": row[2], "receiver_count": row[3]} for row in
+                       result}
+        return result_dict
 
 
 @db_error
