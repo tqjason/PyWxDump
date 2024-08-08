@@ -59,6 +59,8 @@ class MicroHandler(DatabaseBase):
         :param id_is_key: id_is_key: True: id作为key，False: name作为key
         :return:
         """
+        if not self.table_exist.get("ContactLabel", False):
+            return {}
         sql = "SELECT LabelId, LabelName FROM ContactLabel ORDER BY LabelName ASC;"
         result = self.execute(sql)
         if not result:

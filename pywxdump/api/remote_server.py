@@ -203,7 +203,7 @@ def msg_count():
     db_config = get_conf(g.caf, my_wxid, "db_config")
     db = DBHandler(db_config)
     chat_count = db.get_msg_count(wxid)
-    chat_count1 = db.get_plc_msg_count(wxid)
+    chat_count1 = db.get_plc_msg_count(wxid) if db.PublicMsg_exist else {}
     # 合并两个字典，相同key，则将value相加
     count = {k: chat_count.get(k, 0) + chat_count1.get(k, 0) for k in
              list(set(list(chat_count.keys()) + list(chat_count1.keys())))}
@@ -234,7 +234,7 @@ def get_msgs():
 
     db = DBHandler(db_config)
     msgs, wxid_list = db.get_msg_list(wxid=wxid, start_index=start, page_size=limit)
-    if not msgs:
+    if not msgs and db.PublicMsg_exist:
         msgs, wxid_list = db.get_plc_msg_list(wxid=wxid, start_index=start, page_size=limit)
     wxid_list.append(my_wxid)
     user = db.get_user_list(wxids=wxid_list)
@@ -462,11 +462,13 @@ def get_date_count():
     word = rq_data.get("wxid", "")
     start_time = rq_data.get("start_time", 0)
     end_time = rq_data.get("end_time", 0)
+    time_format = rq_data.get("time_format", "%Y-%m-%d")
 
     my_wxid = get_conf(g.caf, g.at, "last")
     if not my_wxid: return ReJson(1001, body="my_wxid is required")
     db_config = get_conf(g.caf, my_wxid, "db_config")
-    date_count = DBHandler(db_config).get_date_count(wxid=word, start_time=start_time, end_time=end_time)
+    db = DBHandler(db_config)
+    date_count = db.get_date_count(wxid=word, start_time=start_time, end_time=end_time, time_format=time_format)
     return ReJson(0, date_count)
 
 

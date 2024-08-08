@@ -1,5 +1,30 @@
-## v3.1.9.(待发布)
+## v3.1.14.(待发布)
 
+- 
+
+## v3.1.13
+
+- fix
+- UPDATE CHANGELOG.md
+
+## v3.1.12
+
+- UPDATE CHANGELOG.md
+- fix 部分api请求失败情况下，不会噶了
+
+## v3.1.11
+
+- fix
+
+## v3.1.10
+
+- 增加了一些数据显示
+- 增加聊天情况热力图
+- UPDATE CHANGELOG.md
+
+## v3.1.9
+
+- UPDATE CHANGELOG.md
 - fix 更换选项，无法自动启用新的数据库
 - 调整颜色，但是还是很丑，打算添加自定义颜色进去
 
