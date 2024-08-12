@@ -12,6 +12,8 @@ import os
 import re
 import time
 import shutil
+from collections import Counter
+
 import pythoncom
 import pywxdump
 
@@ -335,13 +337,12 @@ def get_export_endb():
     """
     my_wxid = get_conf(g.caf, g.at, "last")
     if not my_wxid: return ReJson(1001, body="my_wxid is required")
-    wx_path = get_conf(g.caf, my_wxid, "wx_path")
-    wx_path = request.json.get("wx_path", wx_path)
 
+    wx_path = request.json.get("wx_path", "")
     if not wx_path:
+        wx_path = get_conf(g.caf, my_wxid, "wx_path")
+    if not os.path.exists(wx_path if wx_path else ""):
         return ReJson(1002, body=f"wx_path is required: {wx_path}")
-    if not os.path.exists(wx_path):
-        return ReJson(1001, body=f"wx_path not exists: {wx_path}")
 
     # 分割wx_path的文件名和父目录
     code, wxdbpaths = get_core_db(wx_path)
@@ -355,7 +356,8 @@ def get_export_endb():
     for wxdb in wxdbpaths:
         # 复制wxdb->outpath, os.path.basename(wxdb)
         assert isinstance(outpath, str)  # 为了解决pycharm的警告, 无实际意义
-        shutil.copy(wxdb, os.path.join(outpath, os.path.basename(wxdb)))
+        wxdb_path = wxdb.get("db_path")
+        shutil.copy(wxdb_path, os.path.join(outpath, os.path.basename(wxdb_path)))
     return ReJson(0, body=outpath)
 
 
@@ -365,11 +367,19 @@ def get_export_dedb():
     导出解密数据库
     :return:
     """
+    if request.method not in ["GET", "POST"]:
+        return ReJson(1003, msg="Unsupported method")
+    rq_data = request.json if request.method == "POST" else request.args
+    key = rq_data.get("key", "")
+    wx_path = rq_data.get("wx_path", "")
+
     my_wxid = get_conf(g.caf, g.at, "last")
     if not my_wxid: return ReJson(1001, body="my_wxid is required")
 
-    key = request.json.get("key", get_conf(g.caf, my_wxid, "key"))
-    wx_path = request.json.get("wx_path", get_conf(g.caf, my_wxid, "wx_path"))
+    if not key:
+        key = get_conf(g.caf, my_wxid, "key")
+    if not wx_path:
+        wx_path = get_conf(g.caf, my_wxid, "wx_path")
 
     if not key:
         return ReJson(1002, body=f"key is required: {key}")
@@ -381,7 +391,7 @@ def get_export_dedb():
     outpath = os.path.join(g.work_path, "export", my_wxid, "dedb")
     if not os.path.exists(outpath):
         os.makedirs(outpath)
-
+    assert isinstance(outpath, str)
     code, merge_save_path = decrypt_merge(wx_path=wx_path, key=key, outpath=outpath)
     time.sleep(1)
     if code:
@@ -495,7 +505,51 @@ def get_top_talker_count():
 @rs_api.route('/api/rs/wordcloud', methods=["GET", 'POST'])
 @error9999
 def wordcloud():
-    pass
+    if request.method not in ["GET", "POST"]:
+        return ReJson(1003, msg="Unsupported method")
+    rq_data = request.json if request.method == "POST" else request.args
+
+    try:
+        import jieba
+    except ImportError:
+        return ReJson(9999, body="jieba is required")
+
+    target = rq_data.get("target", "")
+    if not target:
+        return ReJson(1002, body="target is required")
+
+    my_wxid = get_conf(g.caf, g.at, "last")
+    if not my_wxid: return ReJson(1001, body="my_wxid is required")
+    db_config = get_conf(g.caf, my_wxid, "db_config")
+    db = DBHandler(db_config)
+
+    if target == "signature":
+        users = db.get_user()
+        signature_list = []
+        for wxid, user in users.items():
+            ExtraBuf = user.get("ExtraBuf", {})
+            signature = ExtraBuf.get("个性签名", "") if ExtraBuf else ""
+            if signature:
+                signature_list.append(signature)
+        signature_str = " ".join(signature_list)
+        words = jieba.lcut(signature_str)
+        words = [word for word in words if len(word) > 1]
+        count_dict = dict(Counter(words))
+        return ReJson(0, count_dict)
+    elif target == "nickname":
+        users = db.get_user()
+        nickname_list = []
+        for wxid, user in users.items():
+            nickname = user.get("nickname", "")
+            if nickname:
+                nickname_list.append(nickname)
+        nickname_str = " ".join(nickname_list)
+        words = jieba.lcut(nickname_str)
+        words = [word for word in words if len(word) > 1]
+        count_dict = dict(Counter(words))
+        return ReJson(0, count_dict)
+
+    return ReJson(1002, body="target is required")
 
 
 # end 聊天记录分析api ****************************************************************************************************

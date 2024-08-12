@@ -1,6 +1,28 @@
-## v3.1.14.(待发布)
+## v3.1.17.(待发布)
 
 - 
+
+## v3.1.16
+
+- 新增个性签名词云
+- fix export
+- UPDATE CHANGELOG.md
+
+## v3.1.15
+
+- fix
+- fix build error
+
+## v3.1.14
+
+- fix
+- 添加注释
+- 新标签页打开链接
+- 清理2.0的ui文件
+- 实时消息增加工具路径设置
+- fix bug；略微调整UI
+- UPDATE CHANGELOG.md
+- (backup/master) UPDATE CHANGELOG.md
 
 ## v3.1.13
 
@@ -264,7 +286,6 @@
 ## v3.0.15
 
 - 增加合并数据库的容错
-- (backup/master) 增加合并数据库的容错
 
 ## v3.0.14
 

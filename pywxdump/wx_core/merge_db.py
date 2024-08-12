@@ -420,39 +420,34 @@ def merge_real_time_db(key, merge_path: str, db_paths: [dict] or dict, real_time
         os.makedirs(merge_path_base)
 
     endbs = []
-
     for db_info in db_paths:
         db_path = os.path.abspath(db_info['db_path'])
         if not os.path.exists(db_path):
             # raise FileNotFoundError("数据库不存在")
             continue
-        if "MSG" not in db_path and "MicroMsg" not in db_path and "MediaMSG" not in db_path:
-            # raise FileNotFoundError("数据库不是消息数据库")  # MicroMsg实时数据库
-            continue
         endbs.append(os.path.abspath(db_path))
     endbs = '" "'.join(list(set(endbs)))
 
-    if not real_time_exe_path:
-        # 获取当前文件夹路径
-        current_path = os.path.dirname(__file__)
+    if not os.path.exists(real_time_exe_path if real_time_exe_path else ""):
+        current_path = os.path.dirname(__file__)  # 获取当前文件夹路径
         real_time_exe_path = os.path.join(current_path, "tools", "realTime.exe")
     if not os.path.exists(real_time_exe_path):
         raise FileNotFoundError("未找到实时数据库合并工具")
+    real_time_exe_path = os.path.abspath(real_time_exe_path)
 
     # 调用cmd命令
     cmd = f'{real_time_exe_path} "{key}" "{merge_path}" "{endbs}"'
     # os.system(cmd)
+    # wx_core_loger.info(f"合并实时数据库命令：{cmd}")
     p = subprocess.Popen(cmd, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=merge_path_base,
                          creationflags=subprocess.CREATE_NO_WINDOW)
-    # p.communicate()
-    # 查看返回值
-    out, err = p.communicate()
+    out, err = p.communicate()  # 查看返回值
     if out and out.decode("utf-8").find("SUCCESS") >= 0:
         wx_core_loger.info(f"合并实时数据库成功{out}")
         return True, merge_path
-    if err:
+    else:
         wx_core_loger.error(f"合并实时数据库失败\n{out}\n{err}")
-        return False, err
+        return False, (out, err)
 
 
 @wx_core_error
@@ -476,7 +471,8 @@ def all_merge_real_time_db(key, wx_path, merge_path: str, real_time_exe_path=Non
     if not db_paths[0]:
         return False, db_paths[1]
     db_paths = db_paths[1]
-    code, ret = merge_real_time_db(key=key, merge_path=merge_path, db_paths=db_paths, real_time_exe_path=real_time_exe_path)
+    code, ret = merge_real_time_db(key=key, merge_path=merge_path, db_paths=db_paths,
+                                   real_time_exe_path=real_time_exe_path)
     if code:
         return True, merge_path
     else:

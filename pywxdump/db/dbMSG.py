@@ -46,7 +46,7 @@ class MsgHandler(DatabaseBase):
         """
         获取聊天记录数量,根据wxid获取单个联系人的聊天记录数量，不传wxid则获取所有联系人的聊天记录数量
         :param wxids: wxid list
-        :return: 聊天记录数量列表 {wxid: chat_count}
+        :return: 聊天记录数量列表 {wxid: chat_count, total: total_count}
         """
         if isinstance(wxids, str):
             wxids = [wxids]
@@ -87,6 +87,7 @@ class MsgHandler(DatabaseBase):
 
         msg = StrContent
         src = ""
+        extra = {}
 
         if type_id == (1, 0):  # 文本
             msg = StrContent
@@ -163,6 +164,7 @@ class MsgHandler(DatabaseBase):
             url = appmsg.get("url", "")
             msg = f'{title}\n{des}\n\n<a href="{url}" target="_blank">点击查看详情</a>'
             src = url
+            extra = appmsg
 
         elif type_id == (49, 19):  # 合并转发的聊天记录
             CompressContent = decompress_CompressContent(CompressContent)
@@ -249,13 +251,26 @@ class MsgHandler(DatabaseBase):
                 talker = StrTalker
 
         row_data = {"id": _id, "MsgSvrID": str(MsgSvrID), "type_name": type_name, "is_sender": IsSender,
-                    "talker": talker, "room_name": StrTalker, "msg": msg, "src": src, "extra": {},
+                    "talker": talker, "room_name": StrTalker, "msg": msg, "src": src, "extra": extra,
                     "CreateTime": CreateTime, }
         return row_data
 
     @db_error
     def get_msg_list(self, wxid="", start_index=0, page_size=500, msg_type: str = "", msg_sub_type: str = "",
                      start_createtime=None, end_createtime=None):
+        """
+        获取聊天记录列表
+        :param wxid: wxid
+        :param start_index: 起始索引
+        :param page_size: 页大小
+        :param msg_type: 消息类型
+        :param msg_sub_type: 消息子类型
+        :param start_createtime: 开始时间
+        :param end_createtime: 结束时间
+        :return: 聊天记录列表 {"id": _id, "MsgSvrID": str(MsgSvrID), "type_name": type_name, "is_sender": IsSender,
+                    "talker": talker, "room_name": StrTalker, "msg": msg, "src": src, "extra": {},
+                    "CreateTime": CreateTime, }
+        """
         sql_base = ("SELECT localId,TalkerId,MsgSvrID,Type,SubType,CreateTime,IsSender,Sequence,StatusEx,FlagEx,Status,"
                     "MsgSequence,StrContent,MsgServerSeq,StrTalker,DisplayContent,Reserved0,Reserved1,Reserved3,"
                     "Reserved4,Reserved5,Reserved6,CompressContent,BytesExtra,BytesTrans,Reserved2,"
