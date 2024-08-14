@@ -1,54 +1,30 @@
 # -*- coding: utf-8 -*-#
 # -------------------------------------------------------------------------------
-# Name:         parsingPublicMsg.py
-# Description:  
+# Name:         PublicMsg.py
+# Description:  负责处理公众号数据库信息
 # Author:       xaoyaoo
 # Date:         2024/07/03
 # -------------------------------------------------------------------------------
-
-# -*- coding: utf-8 -*-#
-# -------------------------------------------------------------------------------
-# Name:         parsingMSG.py
-# Description:
-# Author:       xaoyaoo
-# Date:         2024/04/15
-# -------------------------------------------------------------------------------
-import json
-import os
-import re
-from typing import Union, Tuple
-
-import pandas as pd
-
-from .dbbase import DatabaseBase
 from .dbMSG import MsgHandler
-from .utils import get_md5, name2typeid, typeid2name, type_converter, timestamp2str, xml2dict, match_BytesExtra, \
-    db_error
-import lz4.block
-import blackboxprotobuf
+from .utils import db_error
 
 
 class PublicMsgHandler(MsgHandler):
     _class_name = "PublicMSG"
     PublicMSG_required_tables = ["PublicMsg"]
 
-    @db_error
-    def PublicMSG_tables_exist(self):
-        """
-        判断该类所需要的表是否存在
-        """
-        return self.check_tables_exist(self.PublicMSG_required_tables)
-
     def PublicMsg_add_index(self):
         """
         添加索引,加快查询速度
         """
         # 检查是否存在索引
-        sql = "CREATE INDEX IF NOT EXISTS idx_PublicMsg_StrTalker ON MSG(StrTalker);"
+        if not self.tables_exist("PublicMsg"):
+            return
+        sql = "CREATE INDEX IF NOT EXISTS idx_PublicMsg_StrTalker ON PublicMsg(StrTalker);"
         self.execute(sql)
-        sql = "CREATE INDEX IF NOT EXISTS idx_PublicMsg_CreateTime ON MSG(CreateTime);"
+        sql = "CREATE INDEX IF NOT EXISTS idx_PublicMsg_CreateTime ON PublicMsg(CreateTime);"
         self.execute(sql)
-        sql = "CREATE INDEX IF NOT EXISTS idx_PublicMsg_StrTalker_CreateTime ON MSG(StrTalker, CreateTime);"
+        sql = "CREATE INDEX IF NOT EXISTS idx_PublicMsg_StrTalker_CreateTime ON PublicMsg(StrTalker, CreateTime);"
         self.execute(sql)
 
     @db_error
@@ -58,7 +34,9 @@ class PublicMsgHandler(MsgHandler):
         :param wxids: wxid list
         :return: 聊天记录数量列表 {wxid: chat_count}
         """
-        if isinstance(wxids, str):
+        if not self.tables_exist("PublicMsg"):
+            return {}
+        if isinstance(wxids, str) and wxids:
             wxids = [wxids]
         if wxids:
             wxids = "('" + "','".join(wxids) + "')"
@@ -82,7 +60,7 @@ class PublicMsgHandler(MsgHandler):
 
     @db_error
     def get_plc_msg_list(self, wxid="", start_index=0, page_size=500, msg_type: str = "", msg_sub_type: str = "",
-                         start_createtime=None, end_createtime=None):
+                         start_createtime=None, end_createtime=None, my_talker="我"):
         """
         获取聊天记录列表
         :param wxid: wxid
@@ -96,11 +74,8 @@ class PublicMsgHandler(MsgHandler):
                     "talker": talker, "room_name": StrTalker, "msg": msg, "src": src, "extra": {},
                     "CreateTime": CreateTime, }
         """
-        sql_base = ("SELECT localId,TalkerId,MsgSvrID,Type,SubType,CreateTime,IsSender,Sequence,StatusEx,FlagEx,Status,"
-                    "MsgSequence,StrContent,MsgServerSeq,StrTalker,DisplayContent,Reserved0,Reserved1,Reserved3,"
-                    "Reserved4,Reserved5,Reserved6,CompressContent,BytesExtra,BytesTrans,Reserved2,"
-                    "ROW_NUMBER() OVER (ORDER BY CreateTime ASC) AS id "
-                    "FROM PublicMsg ")
+        if not self.tables_exist("PublicMsg"):
+            return [], []
 
         param = ()
         sql_wxid, param = ("AND StrTalker=? ", param + (wxid,)) if wxid else ("", param)
@@ -111,7 +86,11 @@ class PublicMsgHandler(MsgHandler):
         sql_end_createtime, param = ("AND CreateTime<=? ", param + (end_createtime,)) if end_createtime else ("", param)
 
         sql = (
-            f"{sql_base} WHERE 1=1 "
+            "SELECT localId,TalkerId,MsgSvrID,Type,SubType,CreateTime,IsSender,Sequence,StatusEx,FlagEx,Status,"
+            "MsgSequence,StrContent,MsgServerSeq,StrTalker,DisplayContent,Reserved0,Reserved1,Reserved3,"
+            "Reserved4,Reserved5,Reserved6,CompressContent,BytesExtra,BytesTrans,Reserved2,"
+            "ROW_NUMBER() OVER (ORDER BY CreateTime ASC) AS id "
+            "FROM PublicMsg WHERE 1=1 "
             f"{sql_wxid}"
             f"{sql_type}"
             f"{sql_sub_type}"
@@ -124,7 +103,7 @@ class PublicMsgHandler(MsgHandler):
         if not result:
             return [], []
 
-        result_data = (self.get_msg_detail(row) for row in result)
+        result_data = (self.get_msg_detail(row, my_talker=my_talker) for row in result)
         rdata = list(result_data)  # 转为列表
         wxid_list = {d['talker'] for d in rdata}  # 创建一个无重复的 wxid 列表
 

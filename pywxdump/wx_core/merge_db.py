@@ -15,7 +15,7 @@ from typing import List
 
 from .decryption import batch_decrypt
 from .wx_info import get_core_db
-from .utils import wx_core_loger, wx_core_error
+from .utils import wx_core_loger, wx_core_error, DB_TYPE_CORE
 
 
 @wx_core_error
@@ -393,7 +393,7 @@ def decrypt_merge(wx_path: str, key: str, outpath: str = "",
 
 
 @wx_core_error
-def merge_real_time_db(key, merge_path: str, db_paths: [dict] or dict, real_time_exe_path=None):
+def merge_real_time_db(key, merge_path: str, db_paths: [dict] or dict, real_time_exe_path: str = None):
     """
     合并实时数据库消息,暂时只支持64位系统
     :param key:  解密密钥
@@ -451,13 +451,14 @@ def merge_real_time_db(key, merge_path: str, db_paths: [dict] or dict, real_time
 
 
 @wx_core_error
-def all_merge_real_time_db(key, wx_path, merge_path: str, real_time_exe_path=None):
+def all_merge_real_time_db(key, wx_path, merge_path: str, real_time_exe_path: str = None):
     """
     合并所有实时数据库
     注：这是全量合并，会有可能产生重复数据，需要自行去重
     :param key:  解密密钥
     :param wx_path:  微信路径
     :param merge_path:  合并后的数据库路径 eg: C:\\*******\\WeChat Files\\wxid_*********\\merge.db
+    :param real_time_exe_path:  实时数据库合并工具路径
     :return:
     """
     if not merge_path or not key or not wx_path or not wx_path:
@@ -466,8 +467,7 @@ def all_merge_real_time_db(key, wx_path, merge_path: str, real_time_exe_path=Non
         from pywxdump import get_core_db
     except ImportError:
         return False, "未找到模块 pywxdump"
-
-    db_paths = get_core_db(wx_path, ["MediaMSG", "MSG", "MicroMsg"])
+    db_paths = get_core_db(wx_path, DB_TYPE_CORE)
     if not db_paths[0]:
         return False, db_paths[1]
     db_paths = db_paths[1]

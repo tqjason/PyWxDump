@@ -21,9 +21,6 @@ from pywxdump.api.rjson import ReJson, RqJson
 from pywxdump.api.utils import get_conf, get_conf_wxids, set_conf, error9999, gen_base64, validate_title, \
     get_conf_local_wxid, ls_loger, random_str
 from pywxdump import get_wx_info, WX_OFFS, batch_decrypt, BiasAddr, merge_db, decrypt_merge, merge_real_time_db
-
-from pywxdump.db import DBHandler, download_file, export_csv, export_json
-
 ls_api = Blueprint('ls_api', __name__, template_folder='../ui/web', static_folder='../ui/web/assets/', )
 ls_api.debug = False
 
@@ -207,7 +204,10 @@ def get_real_time_msg():
     if not merge_path or not key or not wx_path or not wx_path:
         return ReJson(1002, body="msg_path or media_path or wx_path or key is required")
 
-    code, ret = all_merge_real_time_db(key=key, wx_path=wx_path, merge_path=merge_path)
+    real_time_exe_path = get_conf(g.caf, g.at, "real_time_exe_path")
+
+    code, ret = all_merge_real_time_db(key=key, wx_path=wx_path, merge_path=merge_path,
+                                       real_time_exe_path=real_time_exe_path)
     if code:
         return ReJson(0, ret)
     else:
