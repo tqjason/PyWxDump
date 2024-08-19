@@ -24,7 +24,6 @@ install_requires = [
     "lz4",
     "blackboxprotobuf",
     "lxml",
-    "pandas",
     "dbutils",
 
     "fastapi",
@@ -45,6 +44,7 @@ setup(
     url="https://github.com/xaoyaoo/PyWxDump",
     license='MIT',
 
+    # packages=find_packages(exclude=[]),
     packages=['pywxdump', 'pywxdump.ui', 'pywxdump.wx_core', 'pywxdump.wx_core.utils', 'pywxdump.analyzer',
               'pywxdump.api', 'pywxdump.api.export', 'pywxdump.db', 'pywxdump.db.utils'],
     package_dir={'pywxdump': 'pywxdump',
@@ -57,7 +57,7 @@ setup(
                  'pywxdump.db': 'pywxdump/db',
                  'pywxdump.db.utils': 'pywxdump/db/utils'
                  },
-
+    # include_package_data=True,
     package_data={
         'pywxdump': ['WX_OFFS.json', 'ui/web/*', 'ui/web/assets/*', 'wx_core/tools/*',
                      ]
@@ -66,7 +66,7 @@ setup(
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.6, <4',
+    python_requires='>=3.8, <4',
     install_requires=install_requires,
     entry_points={
         'console_scripts': [

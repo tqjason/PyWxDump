@@ -1,6 +1,33 @@
-## v3.1.22.(待发布)
+## v3.1.27.(待发布)
+
+- 
+
+## v3.1.26
+
+- fix dbshow #124
+
+## v3.1.25
+
+- fix
+- UPDATE CHANGELOG.md
+
+## v3.1.24
+
+- fix 部分图片无法读取
+- get_msgs 允许多个wxid
+- UPDATE CHANGELOG.md
+
+## v3.1.23
+
+- fix
+- import 优化
+- rename core_db_type
+- fix import时候无法自动处理data
+
+## v3.1.22
 
 - fix 单用户使用上次数据报错问题
+- UPDATE CHANGELOG.md
 
 ## v3.1.21
 
