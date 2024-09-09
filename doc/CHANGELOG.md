@@ -1,5 +1,8 @@
 ## v3.1.33.(待发布)
 
+- fix
+- 群聊增加群成员显示
+- 计划增加自动推送到gitee
 - UPDATE CHANGELOG.md
 
 ## v3.1.32
@@ -114,7 +117,6 @@
 - 实时消息增加工具路径设置
 - fix bug；略微调整UI
 - UPDATE CHANGELOG.md
-- (backup/master) UPDATE CHANGELOG.md
 
 ## v3.1.13
 
